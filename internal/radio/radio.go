@@ -8,13 +8,13 @@ import (
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 )
 
-func Start() {
+func Start(overlayPath string, musicFolderPath string, rtmpUrl string, videoEncoder string, videoBitrate string) {
 
 	dstCmd := ffmpeg.Filter(
 		[]*ffmpeg.Stream{
 			// Video overlay input
 			ffmpeg.Input(
-				"testing/bradio.mov",
+				overlayPath,
 				ffmpeg.KwArgs{"stream_loop": -1},
 			),
 			// Audio stream input
@@ -23,22 +23,19 @@ func Start() {
 		"amerge",
 		ffmpeg.Args{"inputs=2"},
 	).Output(
-		"rtmp://127.0.0.1/live/rJMKs3tQj",
+		rtmpUrl,
 		ffmpeg.KwArgs{
-			"map": "0:v",
-			"c:v": "h264_videotoolbox",
-			// "c:a":    "aac",
-			"b:v":    "6000k",
+			"map":    "0:v",
+			"c:v":    videoEncoder,
+			"b:v":    videoBitrate,
 			"format": "flv",
 		},
 	).Compile()
 
 	dstStdin, _ := dstCmd.StdinPipe()
-
 	dstCmd.Start()
 
-	dirs, _ := os.ReadDir("testing/music")
-
+	dirs, _ := os.ReadDir(musicFolderPath)
 	for _, e := range dirs {
 		if !e.Type().IsRegular() {
 			continue
@@ -46,7 +43,14 @@ func Start() {
 
 		fmt.Println("Playing " + e.Name())
 
-		srcCmd := ffmpeg.Input("testing/music/"+e.Name(), ffmpeg.KwArgs{"re": ""}).Output("pipe:", ffmpeg.KwArgs{"format": "ogg"}).Compile()
+		srcCmd := ffmpeg.Input(
+			musicFolderPath+"/"+e.Name(),
+			ffmpeg.KwArgs{"re": ""},
+		).Output(
+			"pipe:",
+			ffmpeg.KwArgs{"format": "ogg"},
+		).Compile()
+
 		srcStdout, _ := srcCmd.StdoutPipe()
 		srcCmd.Start()
 

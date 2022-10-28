@@ -1,0 +1,4 @@
+overlay_path: overlay.mp4
+music_folder_path: music
+rtmp_url: rtmp://127.0.0.1/live/stream
+video_encoder: h264_videotoolbox
